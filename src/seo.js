@@ -246,7 +246,7 @@ router.get('/plan', (req, res) => {
   const parentOf = new Map(keys.map(k => { if (topics) return [k, topicParent(k)]; const p = plan.get(k); return [k, p && p.parent != null ? (p.parent && by.has(p.parent) && p.parent !== k ? p.parent : null) : autoParent(k)]; }));
   const top = k => { let p = parentOf.get(k), n = 0; while (p && parentOf.get(p) && n++ < 60) p = parentOf.get(p); return p || k; };
   const out = k => { const g = by.get(k), p = plan.get(k) || {}, idea = p.request_id ? ideaById.get(p.request_id) : null, nm = notMatch(p);
-    return { ...g, target: !!p.target, article: bestFor(g.term, nm), notMatch: nm.size, requested: idea ? { status: idea.status, title: idea.topic, notes: idea.notes || '', edit: idea.edit || null } : null, manual: p.parent != null,
+    return { ...g, target: !!p.target, article: bestFor(g.term, nm), notMatch: nm.size, requested: idea ? { status: idea.statusName, title: idea.topic, notes: idea.notes || '', edit: idea.edit || null } : null, manual: p.parent != null,
       ...(topics ? { level: topics.has(k) ? topics.get(k).level : null } : {}) }; };
   // A requested term takes the terms under it into the "Drafts requested" box.
   const isReq = k => { const p = plan.get(k); return !!(p && p.request_id && ideaById.has(p.request_id) && !['dropped', 'published'].includes(ideaById.get(p.request_id).status)); };
