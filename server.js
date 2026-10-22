@@ -39,7 +39,7 @@ app.use('/api/admin/academy', academy.admin);
 app.use('/api/verify', academy.publicRouter);
 app.use('/api/webinars', webinars.router);
 app.use('/api/media', media.router);
-for (const [mount, mod] of [['seo', './src/seo'], ['articlemap', './src/articlemap'], ['ideas', './src/ideas'], ['social', './src/social'], ['site', './src/sitesync'], ['directory', './src/directory'], ['resources', './src/resources']]) {
+for (const [mount, mod] of [['seo', './src/seo'], ['articlemap', './src/articlemap'], ['ideas', './src/ideas'], ['social', './src/social'], ['site', './src/sitesync'], ['directory', './src/directory'], ['resources', './src/resources'], ['calendar', './src/calendar']]) {
   if (fs.existsSync(path.join(__dirname, mod + '.js'))) { const m = require(mod); app.use('/api/' + mount, m.router); if (m.mount) m.mount(app); }
 }
 

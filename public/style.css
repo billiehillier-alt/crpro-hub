@@ -186,3 +186,7 @@ body.plain { background: var(--panel); }
 @media (max-width: 860px) { .am-grid { grid-template-columns: 1fr !important; } }
 .node.header .btn.alt { color: #fff; border-color: #6B7280; }
 .node.header .muted { color: #C9CDD4; }
+@media (max-width: 860px) { .shell { grid-template-rows: auto 1fr; align-content: start; } }
+.cal-legend .chip { display: inline-block; margin: 0 4px 0 0; }
+.cal-legend .chip { padding: 1px 6px; border-radius: 4px; background: #E6F7FE; color: #00405E; border-left: 3px solid var(--cyan); }
+.cal-legend .chip.ours { background: #FFE6F2; color: #6B0034; border-left-color: var(--pink); }

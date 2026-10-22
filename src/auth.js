@@ -62,7 +62,7 @@ const failed = ip => { const t = tries.get(ip) || { n: 0, until: 0 }; t.n++; if 
 // ---------- who gets in ----------
 // Pages anyone may load without signing in. Feature modules add their own (the signed WordPress endpoints, /verify, /l/:code).
 const OPEN = new Set(['/login', '/login.html', '/style.css', '/logo.png', '/favicon.ico', '/fonts.css', '/api/auth/status', '/api/auth/setup', '/api/auth/login',
-  '/api/auth/signup', '/api/auth/forgot', '/api/auth/reset', '/api/health', '/verify']);
+  '/api/auth/signup', '/api/auth/forgot', '/api/auth/reset', '/api/health', '/verify', '/calendar.ics']);
 const OPEN_PREFIX = ['/fonts/', '/verify/', '/api/verify/', '/l/', '/api/site/', '/si/'];
 function guard(req, res, next) {
   if (OPEN.has(req.path) || OPEN_PREFIX.some(p => req.path.startsWith(p))) return next();
