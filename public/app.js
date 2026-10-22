@@ -91,18 +91,74 @@ CR.player = (src, url) => {
 
 // ---------- menu and routing ----------
 CR.route = (name, fn, opts = {}) => { CR.routes[name] = { fn, ...opts }; };
-const MENU = [
-  ['home', 'Home'], ['academy', 'Academy'], ['webinars', 'Webinars'], ['calendar', 'Calendar'], ['directory', 'Directory'], ['resources', 'Resources'], ['certificates', 'My certificates'], ['account', 'My account'],
+// Left menu, laid out like psyrenne's: folding sections with gold headings, an icon per page, and the
+// Admin section (owner only, purple outline) at the top. Items inside each section run A to Z.
+const ICON = {
+  home: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  learn: 'M2 8l10-5 10 5-10 5zM6 10v5c0 1.5 3 3 6 3s6-1.5 6-3v-5',
+  play: 'M4 5h16v11H4zM10 9l4 2-4 2zM8 20h8',
+  cert: 'M6 3h12v13H6zM9 7h6M9 10h6M10 16l-2 5 4-2 4 2-2-5',
+  cal: 'M4 6h16v14H4zM4 10h16M8 3v5M16 3v5',
+  dir: 'M4 4h11v16H4zM15 8h5v12h-5M7 8h5M7 12h5M7 16h3',
+  book: 'M4 5c3-1 5-1 8 1 3-2 5-2 8-1v14c-3-1-5-1-8 1-3-2-5-2-8-1zM12 6v14',
+  user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1-4 4-6 8-6s7 2 8 6',
+  gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-2-4-2 1-2-2V4h-4v2L9 7 7 6 5 10l2 1v2l-2 1 2 4 2-1 2 2v2h4v-2l2-1 2 1 2-4-2-1z',
+  people: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 0 1 0 6M18 15c2 .5 3 2 3 5',
+  seo: 'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM15 15l6 6',
+  tree: 'M12 3v5M5 13v-2h14v2M12 8v3M3 13h4v4H3zM10 13h4v4h-4zM17 13h4v4h-4z',
+  map: 'M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14',
+  idea: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c1 1 1 2 1 3h6c0-1 0-2 1-3a6 6 0 0 0-4-10z',
+  share: 'M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4',
+  admin: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+};
+const ico = k => `<svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[k]}"/></svg>`;
+const NAV = [
+  { top: ['home', 'Home', 'home'] },
+  { sec: 'learn', title: 'Learn', icon: 'learn', items: [['academy', 'Academy', 'learn'], ['certificates', 'My certificates', 'cert'], ['webinars', 'Webinars', 'play']] },
+  { sec: 'hub', title: 'The Hub', icon: 'dir', items: [['calendar', 'Calendar', 'cal'], ['directory', 'Directory', 'dir'], ['resources', 'Resources', 'book']] },
+  { top: ['account', 'My account', 'user'] },
 ];
 const ADMIN = [
-  ['admin-courses', 'Courses'], ['admin-webinars', 'Webinars'], ['admin-calendar', 'Calendar'], ['admin-certificates', 'Certificates'], ['admin-directory', 'Directory'], ['admin-resources', 'Resources'],
-  ['seo', 'SEO plan'], ['seotree', 'Topic map'], ['articlemap', 'Article map'], ['ideas', 'Article ideas'], ['social', 'Social posts'], ['people', 'People'], ['settings', 'Settings'],
+  ['Learning', [['admin-certificates', 'Certificates', 'cert'], ['admin-courses', 'Courses', 'learn'], ['admin-webinars', 'Webinars', 'play']]],
+  ['Hub', [['admin-calendar', 'Calendar', 'cal'], ['admin-directory', 'Directory', 'dir'], ['admin-resources', 'Resources', 'book']]],
+  ['Marketing', [['ideas', 'Article ideas', 'idea'], ['articlemap', 'Article map', 'map'], ['seo', 'SEO plan', 'seo'], ['social', 'Social posts', 'share'], ['seotree', 'Topic map', 'tree']]],
+  ['System', [['people', 'People', 'people'], ['settings', 'Settings', 'gear']]],
 ];
+const navOpen = sec => { try { const v = JSON.parse(localStorage.getItem('crp-nav') || '{}')[sec]; return v === undefined ? sec !== 'admin' : v; } catch { return sec !== 'admin'; } };
+const navSave = (sec, open) => { try { const o = JSON.parse(localStorage.getItem('crp-nav') || '{}'); o[sec] = open; localStorage.setItem('crp-nav', JSON.stringify(o)); } catch {} };
 function drawMenu(cur) {
-  const link = ([k, t]) => CR.routes[k] ? `<a href="#${k}" class="${cur === k ? 'on' : ''}"${cur === k ? ' aria-current="page"' : ''}>${esc(t)}</a>` : '';
-  $('#menu').innerHTML = MENU.map(link).join('') + (CR.me && CR.me.owner ? `<div class="group">Admin <span class="small" style="text-transform:none;letter-spacing:0">(only you see this)</span></div><div class="owner-menu">${ADMIN.map(link).join('')}</div>` : '');
+  const link = ([k, t, i], cls) => CR.routes[k] ? `<a href="#${k}" data-screen="${k}" class="${cls}${cur === k ? ' active' : ''}"${cur === k ? ' aria-current="page"' : ''}>${ico(i)}<span>${esc(t)}</span></a>` : '';
+  const hasCur = items => items.some(([k]) => k === cur);
+  const sec = (id, title, icon, inner, open, extra = '') => `<details class="nav-sec${extra}" data-navsec="${id}"${open ? ' open' : ''}><summary>${ico(icon)}<span>${esc(title)}</span></summary>${inner}</details>`;
+  let html = '';
+  if (CR.me && CR.me.owner) {
+    const all = ADMIN.flatMap(([, items]) => items);
+    html += sec('admin', 'Admin', 'admin', ADMIN.map(([head, items]) => `<span class="nav-subhead">${esc(head)}</span>${items.map(it => link(it, 'sub')).join('')}`).join(''), navOpen('admin') || hasCur(all), ' owner-only');
+  }
+  for (const n of NAV) html += n.top ? link(n.top, 'top') : sec(n.sec, n.title, n.icon, n.items.map(it => link(it, 'sub')).join(''), navOpen(n.sec) || hasCur(n.items));
+  CR.menuDrawnAt = performance.now(); $('#menu').innerHTML = html;
+  const q = $('#navQ'); if (q && q.value) filterMenu(q.value);
   $('#sideFoot').innerHTML = `<p>${esc(CR.me ? (CR.me.name || CR.me.email) : '')}</p><div class="row"><button id="themeBtn">${document.documentElement.dataset.theme === 'dark' ? 'Light' : 'Dark'} mode</button><button id="logoutBtn">Sign out</button></div>`;
 }
+// Menu search: every word has to match a page name or its section, in any order.
+function filterMenu(text) {
+  const words = text.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  for (const d of $$('#menu details')) {
+    let any = false;
+    for (const a of $$('a', d)) { const hay = (a.textContent + ' ' + d.querySelector('summary').textContent + ' ' + (a.previousElementSibling && a.previousElementSibling.classList.contains('nav-subhead') ? a.previousElementSibling.textContent : '')).toLowerCase();
+      const hit = words.every(w => hay.includes(w)); a.hidden = !hit; any = any || hit; }
+    for (const h of $$('.nav-subhead', d)) { let n = h.nextElementSibling, show = false; while (n && n.tagName === 'A') { show = show || !n.hidden; n = n.nextElementSibling; } h.hidden = words.length > 0 && !show; }
+    d.hidden = !any; if (words.length && any) d.open = true;
+  }
+  for (const a of $$('#menu > a')) a.hidden = !words.every(w => a.textContent.toLowerCase().includes(w));
+}
+document.addEventListener('input', e => { if (e.target.id === 'navQ') filterMenu(e.target.value); });
+document.addEventListener('keydown', e => {
+  if (e.target.id === 'navQ' && e.key === 'Enter') { const a = $$('#menu a').find(x => !x.hidden && !(x.closest('details') || {}).hidden); if (a) { e.target.value = ''; filterMenu(''); location.hash = a.getAttribute('href'); } }
+  if (e.target.id === 'navQ' && e.key === 'Escape') { e.target.value = ''; filterMenu(''); }
+  if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) && !e.target.isContentEditable) { e.preventDefault(); $('#navQ').focus(); }
+});
+document.addEventListener('toggle', e => { const d = e.target; if (d.matches && d.matches('#menu details[data-navsec]') && !$('#navQ').value && performance.now() - (CR.menuDrawnAt || 0) > 150) navSave(d.dataset.navsec, d.open); }, true);
 document.addEventListener('click', async e => {
   if (e.target.id === 'logoutBtn') { await fetch('/api/auth/logout', { method: 'POST' }); location.href = '/login'; }
   if (e.target.id === 'themeBtn') { const dark = !(document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches));
