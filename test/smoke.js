@@ -78,6 +78,28 @@ if (require.main !== module) return;
   r = await student.call(`/api/webinars/${eid}/rsvp`, { body: { going: true } }); check('Elite-only webinar blocks non-Elite RSVP', r.status === 403);
   r = await owner.call('/api/webinars/zoom/status'); check('Zoom status answers "not set up" without keys', r.status === 200 && r.json.on === false);
 
+  // SEO: the signed WordPress push, an export upload, the plan, a draft request, the article map.
+  if (process.env.SITE_KEY) {
+    const crypto = require('crypto'), sign = b => { const ts = Math.floor(Date.now() / 1000); return { 'X-CRPro-Timestamp': String(ts), 'X-CRPro-Signature': 'sha256=' + crypto.createHmac('sha256', process.env.SITE_KEY).update(ts + '.' + b).digest('hex') }; };
+    const body = JSON.stringify({ articles: [{ id: 101, title: 'GCP Training: The Complete Guide to ICH E6(R3)', status: 'publish', url: 'https://example.org/gcp-training/', keyphrase: 'gcp training', text: 'Good clinical practice training for sites and CRCs.', date_gmt: new Date().toISOString() },
+      { id: 102, title: 'How to Become a Clinical Research Coordinator', status: 'draft', url: '', edit: 'https://example.org/wp-admin/post.php?post=102&action=edit', keyphrase: 'become a crc', text: 'CRC career steps.' }] });
+    r = await anon.call('/api/site/articles', { body, headers: sign(body) }); check('Signed WordPress article push accepted', r.status === 200 && r.json.articles === 2, r.text.slice(0, 80));
+    r = await anon.call('/api/site/articles', { body, headers: { ...sign(body), 'X-CRPro-Signature': 'sha256=' + '0'.repeat(64) } }); check('Badly signed push refused', r.status === 403);
+    const csv = 'Keyword,Position,Search Volume,Keyword Difficulty,URL\ngcp training,4,1900,40,https://example.org/gcp-training/\ngcp training online free,9,320,30,\nhow to become a clinical research coordinator,15,880,35,\nraspberry pi projects,50,9000,20,\n';
+    r = await owner.call('/api/seo/upload', { body: { name: 'semrush-competitor.csv', text: csv, whose: 'competitor', competitor: 'example.net' } });
+    check('Semrush CSV upload (competitor)', r.status === 200 && r.json.rows === 4, r.text.slice(0, 100));
+    check('Off-topic term set aside', r.json && r.json.offtopic === 1);
+    r = await owner.call('/api/seo/plan'); const g = r.json && r.json.groups.find(x => x.key === 'gcp training');
+    check('SEO plan groups terms and matches an article', g && g.article && g.article.id === 101 && (g.children || []).some(c => c.key === 'gcp training online free'), g && JSON.stringify(g.article));
+    r = await owner.call('/api/seo/plan/request', { body: { key: 'how to become a clinical research coordinator', title: 'How to Become a CRC' } }); check('Request a draft from the plan', r.status === 200);
+    const rb = ''; r = await anon.call('/api/site/requests', { headers: sign(rb) }); check('WordPress reads waiting draft requests (signed)', r.status === 200 && r.json.requests.some(i => i.keyphrase === 'how to become a clinical research coordinator'));
+    r = await owner.call('/api/articlemap/missing', { body: { title: 'GOOD CLINICAL PRACTICE', kind: 'header' } }); const hid = r.json && r.json.id; check('Article map: add a header', !!hid);
+    r = await owner.call('/api/articlemap/match', { body: {} }); check('Article map: match articles to headers', r.status === 200 && r.json.total === 1, r.text.slice(0, 100));
+    r = await owner.call('/api/articlemap/missing', { body: { title: 'GCP Renewal FAQ', parent: hid } }); const mid2 = r.json && r.json.id;
+    r = await owner.call(`/api/articlemap/missing/${mid2}/draft`, { body: { keyphrase: 'gcp renewal' } }); check('Article map: request a draft for a missing card', r.status === 200, r.text.slice(0, 80));
+    r = await owner.call('/api/ideas'); check('Article ideas list has both requests', r.status === 200 && r.json.ideas.length >= 2);
+  }
+
   // Other features: they should answer, and say "not set up" where keys are missing.
   for (const p of ['/api/seo', '/api/seo/semrush', '/api/seo/plan', '/api/seo/plan?tree=1&by=topic', '/api/seo/bands', '/api/articlemap', '/api/ideas', '/api/social', '/api/social/results', '/api/social/coverage', '/api/social/connections', '/api/settings']) {
     r = await owner.call(p); check(`GET ${p} answers`, r.status === 200, r.status + ' ' + r.text.slice(0, 60));

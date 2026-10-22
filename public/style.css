@@ -183,3 +183,4 @@ body.plain { background: var(--panel); }
 .social-post.due { border-left-color: var(--pink); }
 .pic-thumb { width: 120px; height: 90px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); }
 .stars button { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--gold); padding: 0 2px; }
+@media (max-width: 860px) { .am-grid { grid-template-columns: 1fr !important; } }
