@@ -61,7 +61,8 @@ app.put('/api/settings', auth.ownerOnly, (req, res) => {
 });
 
 // Server-made pages: the public certificate check and the printable certificate.
-app.get('/verify', (req, res) => res.send(pages.verifyPage(req.query.id ? academy.lookup(String(req.query.id), req.ip) : undefined, req.query.id)));
+app.get('/verify', (req, res) => { const id = String(req.query.id || '').trim(); if (!id) return res.send(pages.verifyPage(undefined, ''));
+  let v; try { v = academy.lookup(id, req.ip); } catch (err) { return res.status(429).send(pages.verifyPage(null, id, err.message)); } res.status(v ? 200 : 404).send(pages.verifyPage(v, id)); });
 app.get('/verify/:id', (req, res) => { let v; try { v = academy.lookup(req.params.id, req.ip); } catch (err) { return res.status(429).send(pages.verifyPage(null, req.params.id, err.message)); } res.status(v ? 200 : 404).send(pages.verifyPage(v, req.params.id)); });
 app.get('/certificate/:id', (req, res) => {
   const c = require('./src/db').db.prepare('SELECT * FROM certificates WHERE id = ?').get(String(req.params.id));
@@ -71,6 +72,11 @@ app.get('/certificate/:id', (req, res) => {
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
+// Errors nobody caught: a short message, never a stack trace.
+app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
+  const status = err.status || err.statusCode || 500; if (status >= 500) console.error(err);
+  res.status(status).json({ error: status === 400 ? 'That request didn’t read right.' : status === 413 ? 'That’s too big to send.' : 'Something went wrong. Try again.' });
+});
 
 const PORT = Number(process.env.PORT) || 4310;
 app.listen(PORT, () => console.log(`${getSetting('site_name')} hub app on http://localhost:${PORT}`));
