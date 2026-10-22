@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in | Clinical Research Pro</title>
+<link rel="icon" href="/logo.png"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/style.css">
+</head>
+<body class="plain">
+<div class="stripe"></div>
+<div class="login-box">
+  <img class="logo" src="/logo.png" alt="Clinical Research Pro logo" width="96" height="96">
+  <h1 id="title">Sign in</h1>
+  <p class="tagline">Collaborate. Educate. Empower.</p>
+  <div id="msg"></div>
+  <form id="form" class="form" novalidate></form>
+  <p id="links" class="small" style="text-align:center;margin-top:12px"></p>
+  <p class="small muted" style="text-align:center"><a href="/verify">Verify a certificate</a></p>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const params = new URLSearchParams(location.search);
+const next = (params.get('next') || '/').startsWith('/') && !(params.get('next') || '').startsWith('//') ? params.get('next') || '/' : '/';
+const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ''; } })();
+let status = {};
+const field = (id, label, type = 'text', extra = '') => `<div><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" ${extra}></div>`;
+const MODES = {
+  setup: { title: 'Create the owner account', button: 'Create the owner account', url: '/api/auth/setup',
+    intro: '<p class="msg warn">This only shows once, on a brand-new app. The account you make here runs the whole site. Use your own email and a password only you know.</p>',
+    fields: () => field('name', 'Your first name', 'text', 'autocomplete="given-name"') + field('email', 'Email', 'email', 'autocomplete="email" required') + field('password', 'Password (at least 12 characters)', 'password', 'autocomplete="new-password" required') + (status.setupCode ? field('code', 'Setup code', 'text', 'autocomplete="off"') : '') },
+  login: { title: 'Sign in', button: 'Sign in', url: '/api/auth/login', fields: () => field('email', 'Email', 'email', 'autocomplete="email" required') + field('password', 'Password', 'password', 'autocomplete="current-password" required') },
+  signup: { title: 'Create your free account', button: 'Create my account', url: '/api/auth/signup',
+    intro: '<p class="small muted">Your name goes on your certificates, so type it the way you want it shown.</p>',
+    fields: () => `<div class="two">${field('name', 'First name', 'text', 'autocomplete="given-name" required')}${field('lastName', 'Last name', 'text', 'autocomplete="family-name" required')}</div>` + field('email', 'Email', 'email', 'autocomplete="email" required') + field('password', 'Password (at least 12 characters)', 'password', 'autocomplete="new-password" required') },
+  forgot: { title: 'Reset your password', button: 'Email me a reset link', url: '/api/auth/forgot', fields: () => field('email', 'Email', 'email', 'autocomplete="email" required') },
+  reset: { title: 'Pick a new password', button: 'Save my new password', url: '/api/auth/reset', fields: () => field('password', 'New password (at least 12 characters)', 'password', 'autocomplete="new-password" required') },
+};
+function show(mode) {
+  const m = MODES[mode];
+  $('#title').textContent = m.title; document.title = m.title + ' | Clinical Research Pro';
+  $('#form').innerHTML = (m.intro || '') + m.fields() + `<button class="btn" type="submit">${m.button}</button>`;
+  $('#form').dataset.mode = mode; $('#msg').innerHTML = '';
+  const L = [];
+  if (mode !== 'setup') {
+    if (mode !== 'login') L.push('<a href="#" data-m="login">Sign in</a>');
+    if (mode !== 'signup' && status.openSignup) L.push('<a href="#" data-m="signup">Create a free account</a>');
+    if (mode !== 'forgot') L.push('<a href="#" data-m="forgot">Forgot your password?</a>');
+  }
+  $('#links').innerHTML = L.join(' · ');
+  const first = $('#form input'); if (first) first.focus();
+}
+$('#links').addEventListener('click', e => { const a = e.target.closest('a[data-m]'); if (a) { e.preventDefault(); show(a.dataset.m); } });
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const mode = e.target.dataset.mode, body = Object.fromEntries(new FormData(e.target));
+  if (mode === 'reset') body.code = params.get('reset');
+  if (mode === 'signup') body.timezone = tz;
+  const btn = e.target.querySelector('button'); btn.disabled = true;
+  try {
+    const r = await fetch(MODES[mode].url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'That didn’t work. Try again.');
+    if (mode === 'forgot') { $('#msg').innerHTML = `<p class="msg ok">${esc(d.message)}</p>`; btn.disabled = false; return; }
+    location.href = next;
+  } catch (err) { $('#msg').innerHTML = `<p class="msg err" role="alert">${esc(err.message)}</p>`; btn.disabled = false; }
+});
+fetch('/api/auth/status').then(r => r.json()).then(s => {
+  status = s;
+  if (s.user && !params.get('reset')) { location.href = next; return; }
+  show(s.needsSetup ? 'setup' : params.get('reset') ? 'reset' : params.get('signup') && s.openSignup ? 'signup' : 'login');
+});
+</script>
+</body>
+</html>

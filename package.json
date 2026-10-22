@@ -1,0 +1,26 @@
+{
+  "name": "crpro-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Clinical Research Pro hub app: Academy, Webinars, SEO mapping, Social share",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@aws-sdk/client-s3": "^3.1150.0",
+    "@aws-sdk/s3-request-presigner": "^3.1152.0",
+    "@fontsource/montserrat": "^5.2.5",
+    "express": "^4.22.3",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.1.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}
