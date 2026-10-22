@@ -98,6 +98,20 @@ if (require.main !== module) return;
     r = await owner.call('/api/articlemap/missing', { body: { title: 'GCP Renewal FAQ', parent: hid } }); const mid2 = r.json && r.json.id;
     r = await owner.call(`/api/articlemap/missing/${mid2}/draft`, { body: { keyphrase: 'gcp renewal' } }); check('Article map: request a draft for a missing card', r.status === 200, r.text.slice(0, 80));
     r = await owner.call('/api/ideas'); check('Article ideas list has both requests', r.status === 200 && r.json.ideas.length >= 2);
+
+    // Social: plan posts for the live article by hand (no AI key), tracked link, clicks, approval.
+    r = await owner.call('/api/social/article/101'); check('Social planner suggests a time per platform', r.status === 200 && r.json.platforms.linkedin.suggestAt);
+    const at = new Date(Date.now() + 2 * 864e5).toISOString();
+    r = await owner.call('/api/social/article/101', { body: { windows: [{ platform: 'linkedin', on: true, text: 'Need GCP training? Read the guide: https://example.org/gcp-training/', hashtags: '#GCP', at }, { platform: 'x', on: true, text: 'GCP basics https://example.org/gcp-training/', hashtags: '', at }] } });
+    check('Schedule posts for an article', r.status === 200 && r.json.saved === 2, r.text.slice(0, 80));
+    r = await owner.call('/api/social'); const post = r.json.posts.find(p => p.platform === 'linkedin');
+    check('Brand hashtag added first, tracked link swapped in', post && post.hashtags.startsWith('#ClinicalResearchPro') && post.text.includes('/l/' + post.code), post && post.hashtags);
+    r = await anon.call('/l/' + post.code, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0) Chrome/130' } }); check('Tracked link redirects with UTM tags', r.status === 302 && /utm_source=linkedin/.test(r.headers.get('location')));
+    r = await anon.call('/l/' + post.code, { headers: { 'User-Agent': 'LinkedInBot/1.0' } });
+    r = await owner.call('/api/social/' + post.id); check('Robot visit not counted (1 click)', r.json.post.clicks === 1, String(r.json.post.clicks));
+    r = await owner.call('/api/social/' + post.id, { method: 'PUT', body: { status: 'posted' } }); check('Mark a post as posted', r.status === 200);
+    r = await owner.call('/api/social/results'); check('Results count the click', r.status === 200 && r.json.total30 === 1);
+    r = await owner.call('/api/social/oauth/x/start'); check('Connect without keys explains what is missing', r.status === 302 && /X_CLIENT_ID/.test(decodeURIComponent(r.headers.get('location') || '')));
   }
 
   // Other features: they should answer, and say "not set up" where keys are missing.
