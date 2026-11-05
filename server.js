@@ -69,6 +69,7 @@ app.get('/certificate/:id', (req, res) => {
   if (!c || (c.user_id !== req.user.id && !req.user.is_owner)) return res.status(404).send('Not found.');
   res.send(pages.certificatePage(c, auth.appUrl(req)));
 });
+app.get('/preview', (req, res) => res.sendFile(path.join(__dirname, 'public', 'preview.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
 app.use(express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
