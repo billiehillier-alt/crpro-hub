@@ -4,6 +4,7 @@
 // Roles: the owner/admin (is_owner = 1) and students. The very first account is made on the one-time setup page.
 const crypto = require('crypto');
 const express = require('express');
+const path = require('path');
 const { db, getSetting, addColumn } = require('./db');
 const mailer = require('./mailer');
 
@@ -68,6 +69,8 @@ function guard(req, res, next) {
   if (OPEN.has(req.path) || OPEN_PREFIX.some(p => req.path.startsWith(p))) return next();
   const u = currentUser(req);
   if (u) { req.user = u; return next(); }
+  // Visitors who aren't signed in see the public front page (the design preview); Sign in is on it.
+  if (req.path === '/' && req.method === 'GET') return res.sendFile(path.join(__dirname, '..', 'public', 'preview.html'));
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please sign in.', login: true });
   return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
 }
