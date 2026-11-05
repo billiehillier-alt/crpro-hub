@@ -139,9 +139,11 @@ main section[data-page] { padding-block: 40px 64px; }
 .result.no { background: color-mix(in srgb, var(--pink) 10%, var(--paper)); border: 1px solid var(--pink); }
 
 .hubgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 28px; }
-.part { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 8px; align-content: start; }
+.part { border: 1px solid var(--line); border-left: 5px solid var(--pc, var(--pink)); border-radius: var(--radius); padding: 18px 18px 18px 16px; display: grid; gap: 8px; align-content: start; }
 .part h3 { font-size: 18px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .part p { color: var(--muted); font-size: 15px; }
+.part:nth-child(3n+2) { --pc: var(--cyan); }
+.part:nth-child(3n) { --pc: var(--gold); }
 .status { font-family: var(--body); font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
 .s1 { background: var(--pink); color: #fff; }
 .s2 { background: var(--cyan); color: var(--on-accent); }
@@ -309,9 +311,9 @@ footer .wrap { padding-block: 24px; font-size: 14px; color: var(--muted); displa
   <h1 style="font-size:36px; margin-top:8px">The Hub</h1>
   <p class="lead" style="margin-top:8px">One CR Pro login opens everything. New projects plug in as they're ready.</p>
   <div class="hubgrid">
-    <div class="part"><h3>#1 Academy <span class="status s1">First launch</span></h3><p>Courses, webinars, GCP, PMP, CAPM, and courses from industry leaders.</p></div>
-    <div class="part"><h3>#2 Careers <span class="status s2">Next</span></h3><p>Job board, AI CV match, and AI CV help based on the listing.</p></div>
-    <div class="part"><h3>#3 Connect <span class="status s2">Next</span></h3><p>Messages, community board, mentors, speakers, and badges.</p></div>
+    <div class="part"><h3>Academy <span class="status s1">First launch</span></h3><p>Courses, webinars, GCP, PMP, CAPM, and courses from industry leaders.</p></div>
+    <div class="part"><h3>Careers <span class="status s2">Next</span></h3><p>Job board, AI CV match, and AI CV help based on the listing.</p></div>
+    <div class="part"><h3>Connect <span class="status s2">Next</span></h3><p>Messages, community board, mentors, speakers, and badges.</p></div>
     <div class="part"><h3>Directory <span class="status s3">Later</span></h3><p>Orgs, vendors, consultants, sites, and sponsors, with RFPs and feasibility questions.</p></div>
     <div class="part"><h3>Trial Navigator <span class="status s3">Later</span></h3><p>A friendly ClinicalTrials.gov search, with alerts for new studies.</p></div>
     <div class="part"><h3>Resources <span class="status s3">Later</span></h3><p>Conferences, universities, regulations, guidelines, and certifications.</p></div>
@@ -322,7 +324,7 @@ footer .wrap { padding-block: 24px; font-size: 14px; color: var(--muted); displa
 
 </main>
 
-<footer><div class="wrap"><span>© Clinical Research Pro®</span><span>Preview built by Billie · October 2026</span></div></footer>
+<footer><div class="wrap"><span>© Clinical Research Pro®</span></div></footer>
 
 <script>
 (() => {
